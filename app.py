@@ -114,6 +114,82 @@ PLAYERS = [
     {"id":"serge_ibaka","name":"Serge Ibaka","team":"傳奇球員","price":1},
 ]
 
+# Expanded pool: notable role players, defenders, shooters, and additional legends.
+PLAYERS.extend([
+    {"id":"dennis_johnson","name":"Dennis Johnson","team":"傳奇球員","price":2},
+    {"id":"sidney_moncrief","name":"Sidney Moncrief","team":"傳奇球員","price":2},
+    {"id":"bobby_jones","name":"Bobby Jones","team":"傳奇球員","price":1},
+    {"id":"joe_dumars","name":"Joe Dumars","team":"傳奇球員","price":2},
+    {"id":"mitch_richmond","name":"Mitch Richmond","team":"傳奇球員","price":2},
+    {"id":"chris_webber","name":"Chris Webber","team":"傳奇球員","price":3},
+    {"id":"gary_payton","name":"Gary Payton","team":"傳奇球員","price":3},
+    {"id":"penny_hardaway_alt","name":"Penny Hardaway (Classic) ","team":"傳奇球員","price":2},
+    {"id":"bob_cousy","name":"Bob Cousy","team":"傳奇球員","price":2},
+    {"id":"bill_walton","name":"Bill Walton","team":"傳奇球員","price":2},
+    {"id":"wes_unseld","name":"Wes Unseld","team":"傳奇球員","price":2},
+    {"id":"willis_reed","name":"Willis Reed","team":"傳奇球員","price":2},
+    {"id":"pistol_pete","name":"Pete Maravich (Pistol Pete)","team":"傳奇球員","price":2},
+    {"id":"jerry_west","name":"Jerry West","team":"傳奇球員","price":4},
+    {"id":"elgin_baylor","name":"Elgin Baylor","team":"傳奇球員","price":3},
+    {"id":"george_gervin","name":"George Gervin","team":"傳奇球員","price":3},
+    {"id":"alex_english","name":"Alex English","team":"傳奇球員","price":2},
+    {"id":"bob_pettit","name":"Bob Pettit","team":"傳奇球員","price":3},
+    {"id":"dave_cowens","name":"Dave Cowens","team":"傳奇球員","price":2},
+    {"id":"chris_mullin","name":"Chris Mullin","team":"傳奇球員","price":2},
+    {"id":"mark_price","name":"Mark Price","team":"傳奇球員","price":2},
+    {"id":"detlef_schrempf","name":"Detlef Schrempf","team":"傳奇球員","price":1},
+    {"id":"shawn_kemp","name":"Shawn Kemp","team":"傳奇球員","price":3},
+    {"id":"penny_hardaway_90s","name":"Penny Hardaway (1990s)","team":"傳奇球員","price":2},
+    {"id":"ben_wallace","name":"Ben Wallace","team":"傳奇球員","price":2},
+    {"id":"chauncey_billups","name":"Chauncey Billups","team":"傳奇球員","price":2},
+    {"id":"rasheed_wallace","name":"Rasheed Wallace","team":"傳奇球員","price":2},
+    {"id":"rip_hamilton","name":"Richard Hamilton","team":"傳奇球員","price":2},
+    {"id":"ron_artest","name":"Ron Artest","team":"傳奇球員","price":2},
+    {"id":"peja_stojakovic","name":"Peja Stojakovic","team":"傳奇球員","price":2},
+    {"id":"marc_gasol","name":"Marc Gasol","team":"傳奇球員","price":2},
+    {"id":"pau_gasol_alt","name":"Pau Gasol (Lakers)","team":"傳奇球員","price":2},
+    {"id":"lamarcus_aldridge","name":"LaMarcus Aldridge","team":"傳奇球員","price":2},
+    {"id":"joe_johnson","name":"Joe Johnson","team":"傳奇球員","price":2},
+    {"id":"manu_ginobili_alt","name":"Manu Ginobili (Spurs)","team":"傳奇球員","price":2},
+    {"id":"jason_terry","name":"Jason Terry","team":"傳奇球員","price":1},
+    {"id":"michael_finley","name":"Michael Finley","team":"傳奇球員","price":1},
+    {"id":"shawn_marion","name":"Shawn Marion","team":"傳奇球員","price":2},
+    {"id":"amar_stoudemire","name":"Amar'e Stoudemire","team":"傳奇球員","price":2},
+    {"id":"rashard_lewis","name":"Rashard Lewis","team":"傳奇球員","price":1},
+    {"id":"jason_williams","name":"Jason Williams (White Chocolate)","team":"傳奇球員","price":1},
+    {"id":"mike_conley","name":"Mike Conley","team":"現役／近代球員","price":2},
+    {"id":"brook_lopez","name":"Brook Lopez","team":"現役／近代球員","price":2},
+    {"id":"klint_capela","name":"Clint Capela","team":"現役／近代球員","price":1},
+    {"id":"derrick_favors","name":"Derrick Favors","team":"現役／近代球員","price":1},
+    {"id":"pj_tucker","name":"P.J. Tucker","team":"現役／近代球員","price":1},
+    {"id":"daniel_theis","name":"Daniel Theis","team":"現役／近代球員","price":1},
+    {"id":"kentavious_caldwell_pope","name":"Kentavious Caldwell-Pope","team":"現役／近代球員","price":2},
+    {"id":"danny_green","name":"Danny Green","team":"現役／近代球員","price":1},
+    {"id":"pat_bev","name":"Patrick Beverley","team":"現役／近代球員","price":1},
+    {"id":"bogdan_bogdanovic","name":"Bogdan Bogdanovic","team":"現役／近代球員","price":2},
+    {"id":"bojan_bogdanovic","name":"Bojan Bogdanovic","team":"現役／近代球員","price":1},
+    {"id":"buddy_hield","name":"Buddy Hield","team":"現役／近代球員","price":2},
+    {"id":"malcolm_brogdon","name":"Malcolm Brogdon","team":"現役／近代球員","price":2},
+    {"id":"norman_powell","name":"Norman Powell","team":"現役／近代球員","price":2},
+    {"id":"derrick_jones_jr","name":"Derrick Jones Jr.","team":"現役／近代球員","price":1},
+    {"id":"isaiah_hartenstein","name":"Isaiah Hartenstein","team":"現役／近代球員","price":2},
+    {"id":"nic_claxton","name":"Nic Claxton","team":"現役／近代球員","price":2},
+    {"id":"kyle_anderson","name":"Kyle Anderson","team":"現役／近代球員","price":1},
+    {"id":"josh_hart","name":"Josh Hart","team":"現役／近代球員","price":2},
+    {"id":"donte_divincenzo","name":"Donte DiVincenzo","team":"現役／近代球員","price":2},
+    {"id":"lu_dort","name":"Luguentz Dort","team":"現役／近代球員","price":2},
+    {"id":"herb_jones","name":"Herb Jones","team":"現役／近代球員","price":2},
+    {"id":"jaden_mcdaniels","name":"Jaden McDaniels","team":"現役／近代球員","price":1},
+    {"id":"naz_reid","name":"Naz Reid","team":"現役／近代球員","price":2},
+    {"id":"al_horford","name":"Al Horford","team":"現役／近代球員","price":2},
+    {"id":"serge_ibaka_alt","name":"Serge Ibaka (Raptors)","team":"現役／近代球員","price":1},
+    {"id":"bobby_portis","name":"Bobby Portis","team":"現役／近代球員","price":1},
+    {"id":"isaiah_thomas","name":"Isaiah Thomas","team":"現役／近代球員","price":1},
+    {"id":"tj_mcconnell","name":"T.J. McConnell","team":"現役／近代球員","price":1},
+    {"id":"maxi_kleber","name":"Maxi Kleber","team":"現役／近代球員","price":1},
+    {"id":"kyle_lowry","name":"Kyle Lowry","team":"現役／近代球員","price":2},
+])
+
 PLAYER_BY_ID = {p["id"]: p for p in PLAYERS}
 
 # NBA player headshots hosted by ESPN. These URLs are best-effort; the UI keeps
@@ -288,7 +364,7 @@ def start_draft(code, token):
             room["players"][player_token]["draft_order"] = i
         room["draft_order"] = order
         room["current_pick"] = 0
-        room["pick_deadline"] = time.time() + 30
+        room["pick_deadline"] = None
         room["status"] = "drafting"
         room["version"] = room.get("version", 0) + 1
         return room
@@ -322,8 +398,13 @@ def pick_player(code, token, player_id):
         if len(person.get("picks", [])) >= room.get("roster_size", ROSTER_SIZE):
             raise ValueError("你的陣容已經選滿。")
         new_spent = int(person.get("spent", 0)) + int(player["price"])
-        if new_spent > room.get("budget", BUDGET):
-            raise ValueError(f"預算不足：選這名球員會花到 ${new_spent}。")
+        budget = int(room.get("budget", BUDGET))
+        slots_after_pick = int(room.get("roster_size", ROSTER_SIZE)) - len(person.get("picks", [])) - 1
+        if new_spent + slots_after_pick > budget:
+            raise ValueError(
+                f"預算配置不允許：選完會剩 ${budget-new_spent}，但還有 {slots_after_pick} 個位置；"
+                "每位球員至少需要 $1，請選便宜一點的球員，確保最後能湊滿 5 人。"
+            )
         person.setdefault("picks", []).append(player_id)
         person["spent"] = new_spent
         room["available_players"].remove(player_id)
@@ -338,7 +419,7 @@ def pick_player(code, token, player_id):
             "time": datetime.now(timezone.utc).isoformat()
         })
         room["current_pick"] = current + 1
-        room["pick_deadline"] = time.time() + 30 if room["current_pick"] < total_picks else None
+        room["pick_deadline"] = None
         room["version"] = room.get("version", 0) + 1
         if room["current_pick"] >= total_picks:
             room["status"] = "finished"
@@ -484,7 +565,7 @@ def ai_pick_current(code):
         })
         room["current_pick"] = current + 1
         total_picks = len(order) * int(room.get("roster_size", ROSTER_SIZE))
-        room["pick_deadline"] = time.time() + 30 if room["current_pick"] < total_picks else None
+        room["pick_deadline"] = None
         room["version"] = room.get("version", 0) + 1
         if room["current_pick"] >= total_picks:
             room["status"] = "finished"
@@ -734,13 +815,8 @@ if my_token not in room.get("players", {}):
         st.rerun()
     st.stop()
 
-# Automatically advance an expired human pick, and consecutive AI turns.
+# Unlimited human pick time; AI turns advance automatically.
 if room.get("status") == "drafting":
-    try:
-        if auto_pick_expired(code):
-            room = get_room(code) or room
-    except Exception as e:
-        st.warning(f"逾時自動選人暫時失敗：{e}")
     for _ in range(8):
         current_info = active_pick_info(room)
         if not current_info or not is_ai_token(current_info["token"]):
@@ -801,11 +877,7 @@ if room["status"] in ("drafting", "finished"):
         st.subheader(f"第 {current['round']} 輪｜第 {current['pick_no']} / {current['overall']} 順位")
         if current["token"] == my_token:
             st.success("🏀 現在輪到你選球員！")
-            deadline = room.get("pick_deadline")
-            seconds_left = max(0, int(float(deadline) - time.time() + 0.999)) if deadline else 30
-            st.metric("⏳ 本回合剩餘時間", f"{seconds_left} 秒")
-            if seconds_left <= 10:
-                st.warning("時間快到了！逾時會由系統自動幫你選人。")
+            st.info("⏳ 本回合不限時，可以慢慢挑選球員。")
         else:
             st.info(f"目前輪到：**{current['name']}**")
     else:
@@ -826,13 +898,13 @@ if room["status"] in ("drafting", "finished"):
         available = [
             PLAYER_BY_ID[pid] for pid in room.get("available_players", [])
             if pid in PLAYER_BY_ID
-            and PLAYER_BY_ID[pid]["price"] <= remaining
+            and PLAYER_BY_ID[pid]["price"] <= remaining - max(0, ROSTER_SIZE - len(my_player.get("picks", [])) - 1)
             and PLAYER_BY_ID[pid]["price"] <= max_price
             and search.casefold() in PLAYER_BY_ID[pid]["name"].casefold()
         ]
         available.sort(key=lambda p: (-p["price"], p["name"]))
         if not available:
-            st.warning("沒有符合條件的球員。可以清除搜尋文字或降低價格篩選。")
+            st.warning("沒有符合條件的球員。請清除搜尋文字或提高價格篩選；系統會保留足夠預算，讓你能把 5 人陣容選滿。")
         else:
             cols = st.columns(3)
             for i, player in enumerate(available):
@@ -974,6 +1046,6 @@ if room["status"] in ("drafting", "finished"):
 
     if host and room["status"] == "finished":
         st.success("所有玩家都已完成 5 名球員的選擇。")
-    st.caption("每回合限時 30 秒；逾時系統會自動代選。球員分級與能力值為遊戲模型估算，非官方 NBA 評分。此頁面每約 2 秒重新讀取一次共用資料庫。")
+    st.caption("真人選秀不限時；AI 球隊會自動選人。球員分級與能力值為遊戲模型估算，非官方 NBA 評分。此頁面每約 2 秒重新讀取一次共用資料庫。")
     time.sleep(2)
     st.rerun()

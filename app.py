@@ -96,6 +96,22 @@ PLAYERS = [
     {"id":"manu_ginobili","name":"Manu Ginobili","team":"傳奇球員","price":2},
     {"id":"pao_gasol","name":"Pau Gasol","team":"傳奇球員","price":2},
     {"id":"yannis_typed","name":"Penny Hardaway（示範備用）","team":"傳奇球員","price":1},
+    # Famous role players / high-impact specialists
+    {"id":"derrick_white","name":"Derrick White","team":"Celtics","price":2},
+    {"id":"jrue_holiday","name":"Jrue Holiday","team":"Trail Blazers","price":2},
+    {"id":"alex_caruso","name":"Alex Caruso","team":"Thunder","price":2},
+    {"id":"kyle_korver","name":"Kyle Korver","team":"傳奇球員","price":1},
+    {"id":"robert_horry","name":"Robert Horry","team":"傳奇球員","price":1},
+    {"id":"andre_iguodala","name":"Andre Iguodala","team":"傳奇球員","price":2},
+    {"id":"shane_battier","name":"Shane Battier","team":"傳奇球員","price":1},
+    {"id":"bruce_bowen","name":"Bruce Bowen","team":"傳奇球員","price":1},
+    {"id":"marcus_smart","name":"Marcus Smart","team":"Grizzlies","price":1},
+    {"id":"mikal_bridges","name":"Mikal Bridges","team":"Knicks","price":2},
+    {"id":"khris_middleton","name":"Khris Middleton","team":"Bucks","price":2},
+    {"id":"andre_miller","name":"Andre Miller","team":"傳奇球員","price":1},
+    {"id":"horace_grant","name":"Horace Grant","team":"傳奇球員","price":1},
+    {"id":"luis_scola","name":"Luis Scola","team":"傳奇球員","price":1},
+    {"id":"serge_ibaka","name":"Serge Ibaka","team":"傳奇球員","price":1},
 ]
 
 PLAYER_BY_ID = {p["id"]: p for p in PLAYERS}
@@ -112,14 +128,29 @@ ESPN_IDS = {
     "jimmy_butler": "6430", "paul_george": "4251", "kyrie_irving": "6442",
     "jalen_brunson": "3917376", "victor_wembanyama": "5104157",
     "tyrese_haliburton": "4442267", "paolo_banchero": "4432573", "trae_young": "4277905",
-    "deaaron_fox": "4066259", "bam_adebayo": "4066261", "jaylen_brown": "3917376",
+    "deaaron_fox": "4066259", "bam_adebayo": "4066261", "jaylen_brown": "3918891",
     "james_harden": "3992", "chet_holmgren": "4433255", "evan_mobley": "4431678",
     "zach_lavine": "3064447", "brandon_ingram": "3913176", "julius_randle": "3064514",
     "fred_vanvleet": "2991230", "karl_anthony_towns": "3136195", "klay_thompson": "6475",
     "draymond_green": "6589", "rudy_gobert": "3024", "cj_mccollum": "2490469",
-    "demar_derozan": "3978", "alperen_sengun": "4871144", "jaren_jackson_jr": "427796 mor",
+    "demar_derozan": "3978", "alperen_sengun": "4871144", "jaren_jackson_jr": "4277960",
     "lamelo_ball": "4432816", "bradley_beal": "6580", "zion_williamson": "4395628",
     "russell_westbrook": "3468", "chris_paul": "2779",
+    "derrick_white": "3078576", "jrue_holiday": "3995", "alex_caruso": "2991350",
+    "kyle_korver": "3971", "robert_horry": "398", "andre_iguodala": "2386",
+    "shane_battier": "1715", "bruce_bowen": "214", "marcus_smart": "2990992",
+    "mikal_bridges": "3895802", "khris_middleton": "6609", "andre_miller": "18",
+    "horace_grant": "304", "luis_scola": "2775", "serge_ibaka": "3439",
+    "kobe_bryant": "110", "michael_jordan": "1035", "shaquille_oneal": "614",
+    "tim_duncan": "215", "magic_johnson": "196", "larry_bird": "397",
+    "allen_iverson": "397", "vince_carter": "699", "dirk_nowitzki": "609",
+    "dwyane_wade": "1987", "kevin_garnett": "708", "steve_nash": "592",
+    "scottie_pippen": "937", "charles_barkley": "268", "hakeem_olajuwon": "301",
+    "jason_kidd": "429", "ray_allen": "9", "carmelo_anthony": "1975",
+    "tracy_mcgrady": " signature", "dennis_rodman": "765", "reggie_miller": "397",
+    "pete_maravich": " signature", "isiah_thomas": "_signature", "james_worthy": "signature",
+    "dominique_wilkins": "signature", "dwight_howard": " Howard", "tony_parker": "1015",
+    "manu_ginobili": "272", "pao_gasol": "996",
 }
 def player_image_url(player_id):
     espn_id = ESPN_IDS.get(player_id)
@@ -171,6 +202,7 @@ def new_room(host_name, host_token):
         },
         "draft_order": [host_token],
         "current_pick": 0,
+        "pick_deadline": None,
         "available_players": [p["id"] for p in PLAYERS],
         "history": [],
         "budget": BUDGET,
@@ -256,6 +288,7 @@ def start_draft(code, token):
             room["players"][player_token]["draft_order"] = i
         room["draft_order"] = order
         room["current_pick"] = 0
+        room["pick_deadline"] = time.time() + 30
         room["status"] = "drafting"
         room["version"] = room.get("version", 0) + 1
         return room
@@ -305,6 +338,7 @@ def pick_player(code, token, player_id):
             "time": datetime.now(timezone.utc).isoformat()
         })
         room["current_pick"] = current + 1
+        room["pick_deadline"] = time.time() + 30 if room["current_pick"] < total_picks else None
         room["version"] = room.get("version", 0) + 1
         if room["current_pick"] >= total_picks:
             room["status"] = "finished"
@@ -411,7 +445,13 @@ def ai_choose_player(room, ai_token):
         r = player_ratings(p)
         # Encourage team balance while prioritizing high overall value per dollar.
         weakest = min(current.get(k, 75) for k in ["offense", "defense", "shooting", "playmaking", "rebounding"]) if roster else 75
-        return r["overall"] * 1.0 + r["offense"] * 0.12 + r["defense"] * 0.12 + r["shooting"] * 0.12 + r["playmaking"] * 0.12 + r["rebounding"] * 0.12 - p["price"] * 1.5 + random.random() * 4
+        # Score team fit: boost missing skills and role-player specialists, while keeping enough budget for remaining slots.
+        skill_keys = ["offense", "defense", "shooting", "playmaking", "rebounding"]
+        weakest_skill = min(skill_keys, key=lambda k: current.get(k, 75)) if roster else None
+        fit_bonus = (r[weakest_skill] - 75) * 0.32 if weakest_skill else 0
+        price_value = r["overall"] / max(1, p["price"])
+        budget_pacing = 2.5 if p["price"] <= 2 and remaining_slots >= 3 else 0
+        return r["overall"] * 0.85 + price_value * 0.75 + fit_bonus + budget_pacing - p["price"] * 0.7 + random.random() * 1.5
     return max(candidates, key=score)
 
 def ai_pick_current(code):
@@ -443,11 +483,50 @@ def ai_pick_current(code):
             "is_ai": True
         })
         room["current_pick"] = current + 1
+        total_picks = len(order) * int(room.get("roster_size", ROSTER_SIZE))
+        room["pick_deadline"] = time.time() + 30 if room["current_pick"] < total_picks else None
         room["version"] = room.get("version", 0) + 1
-        if room["current_pick"] >= len(order) * int(room.get("roster_size", ROSTER_SIZE)):
+        if room["current_pick"] >= total_picks:
             room["status"] = "finished"
         return room
     return transact_room(code, mutate)
+
+def auto_pick_expired(code):
+    """超過 30 秒未選時，替當前真人玩家依 AI 評分規則選一位可負擔球員。"""
+    room = get_room(code)
+    if not room or room.get("status") != "drafting":
+        return False
+    deadline = room.get("pick_deadline")
+    if not deadline or time.time() < float(deadline):
+        return False
+    current = active_pick_info(room)
+    if not current or is_ai_token(current["token"]):
+        return False
+    token = current["token"]
+    player = ai_choose_player(room, token)
+    pick_player(code, token, player["id"])
+    # Mark the history entry as a timed-out automatic selection.
+    def annotate(state, result):
+        if state and state.get("history"):
+            last = state["history"][-1]
+            if last.get("player_token") == token and last.get("player_id") == player["id"]:
+                last["auto_pick"] = True
+        return state
+    try:
+        transact_room(code, annotate)
+    except Exception:
+        pass
+    return True
+
+
+def player_tier(player):
+    """以遊戲內能力評分顯示分級；不是 NBA 官方排名。"""
+    rating = player_ratings(player)["overall"]
+    if rating >= 93: return "S 級"
+    if rating >= 87: return "A 級"
+    if rating >= 80: return "B 級"
+    if rating >= 73: return "C 級"
+    return "D 級"
 
 def simulate_league(room):
     """每隊互打一次，固定保存結果，避免每次頁面刷新重新抽比分。"""
@@ -655,8 +734,13 @@ if my_token not in room.get("players", {}):
         st.rerun()
     st.stop()
 
-# Automatically execute consecutive AI picks whenever an AI team is on the clock.
+# Automatically advance an expired human pick, and consecutive AI turns.
 if room.get("status") == "drafting":
+    try:
+        if auto_pick_expired(code):
+            room = get_room(code) or room
+    except Exception as e:
+        st.warning(f"逾時自動選人暫時失敗：{e}")
     for _ in range(8):
         current_info = active_pick_info(room)
         if not current_info or not is_ai_token(current_info["token"]):
@@ -717,6 +801,11 @@ if room["status"] in ("drafting", "finished"):
         st.subheader(f"第 {current['round']} 輪｜第 {current['pick_no']} / {current['overall']} 順位")
         if current["token"] == my_token:
             st.success("🏀 現在輪到你選球員！")
+            deadline = room.get("pick_deadline")
+            seconds_left = max(0, int(float(deadline) - time.time() + 0.999)) if deadline else 30
+            st.metric("⏳ 本回合剩餘時間", f"{seconds_left} 秒")
+            if seconds_left <= 10:
+                st.warning("時間快到了！逾時會由系統自動幫你選人。")
         else:
             st.info(f"目前輪到：**{current['name']}**")
     else:
@@ -755,7 +844,7 @@ if room["status"] in ("drafting", "finished"):
                         else:
                             st.markdown("🏀")
                         st.markdown(f"**{player['name']}**")
-                        st.caption(player["team"])
+                        st.caption(f"{player['team']}｜{player_tier(player)}｜能力值 {player_ratings(player)['overall']}")
                         st.markdown(f"### ${player['price']}")
                         if st.button("選擇此球員", key=f"pick_{code}_{player['id']}", use_container_width=True):
                             try:
@@ -885,6 +974,6 @@ if room["status"] in ("drafting", "finished"):
 
     if host and room["status"] == "finished":
         st.success("所有玩家都已完成 5 名球員的選擇。")
-    st.caption("此頁面每約 2 秒重新讀取一次共用資料庫；若未更新，可手動重新整理。")
+    st.caption("每回合限時 30 秒；逾時系統會自動代選。球員分級與能力值為遊戲模型估算，非官方 NBA 評分。此頁面每約 2 秒重新讀取一次共用資料庫。")
     time.sleep(2)
     st.rerun()

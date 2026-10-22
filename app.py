@@ -131,23 +131,29 @@ def firebase_db():
     if not firebase_admin._apps:
         try:
             cfg = dict(st.secrets["firebase"])
-            private_key = cfg["private_key"].replace("\\n", "\n")
-            cred = credentials.Certificate({
-                "type": cfg.get("type", "service_account"),
-                "project_id": cfg["project_id"],
-                "private_key_id": cfg["private_key_id"],
-                "private_key": private_key,
-                "client_email": cfg["client_email"],
-                "client_id": cfg.get("client_id", ""),
-                "token_uri": cfg.get("token_uri", "https://oauth2.googleapis.com/token"),
-                "auth_uri": cfg.get("auth_uri", "https://accounts.google.com/o/oauth2/auth"),
-            })
+            # Allow pasting the entire Firebase service-account JSON into Secrets.
+            if "service_account_json" in cfg:
+                service_account_info = json.loads(cfg["service_account_json"])
+            else:
+                # Keep compatibility with the previous per-field configuration.
+                service_account_info = {
+                    "type": cfg.get("type", "service_account"),
+                    "project_id": cfg["project_id"],
+                    "private_key_id": cfg["private_key_id"],
+                    "private_key": cfg["private_key"].replace("\\n", "\n"),
+                    "client_email": cfg["client_email"],
+                    "client_id": cfg.get("client_id", ""),
+                    "token_uri": cfg.get("token_uri", "https://oauth2.googleapis.com/token"),
+                    "auth_uri": cfg.get("auth_uri", "https://accounts.google.com/o/oauth2/auth"),
+                }
+            cred = credentials.Certificate(service_account_info)
             firebase_admin.initialize_app(cred, {"databaseURL": cfg["database_url"]})
         except Exception as e:
             st.error("Firebase 設定讀取失敗。請檢查 Streamlit Secrets 的 firebase 欄位。")
             st.exception(e)
             st.stop()
     return db.reference("/rooms")
+
 
 def new_room(host_name, host_token):
     code = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=6))

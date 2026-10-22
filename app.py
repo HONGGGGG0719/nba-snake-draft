@@ -9,7 +9,7 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, db
 
-st.set_page_config(page_title="NBA 15元蛇行選秀", page_icon="🏀", layout="wide")
+st.set_page_config(page_title="NBA 傳奇夢幻聯盟", page_icon="🏀", layout="wide")
 
 BUDGET = 15
 ROSTER_SIZE = 5
@@ -217,6 +217,9 @@ def join_room(code, name, token):
             return room
         if any(p.get("name", "").casefold() == name.casefold() for p in room["players"].values()):
             raise ValueError("這個暱稱已被使用，請換一個。")
+        human_count = sum(1 for t in room.get("players", {}) if not is_ai_token(t))
+        if human_count >= 8:
+            raise ValueError("真人玩家已滿 8 位。")
         room["players"][token] = {
             "token": token, "name": name, "joined_at": datetime.now(timezone.utc).isoformat(),
             "draft_order": 0, "picks": [], "spent": 0
@@ -232,12 +235,22 @@ def start_draft(code, token):
             raise ValueError("只有房主可以開始選秀。")
         if room.get("status") != "lobby":
             raise ValueError("選秀已經開始或結束。")
-        order = list(room.get("draft_order", []))
-        if len(order) < 2:
-            raise ValueError("至少需要 2 位玩家才能開始。")
-        max_players = len(PLAYERS) // room.get("roster_size", ROSTER_SIZE)
-        if len(order) > max_players:
-            raise ValueError(f"目前球員池最多支援 {max_players} 位玩家；請減少玩家或增加球員池。")
+        human_tokens = [t for t in room.get("players", {}) if not is_ai_token(t)]
+        if len(human_tokens) < 1:
+            raise ValueError("至少需要 1 位真人玩家才能開始。")
+        if len(human_tokens) > 8:
+            raise ValueError("真人玩家最多 8 位。")
+        # Fill the league to exactly 8 teams with AI teams.
+        for i in range(1, 9):
+            ai_token = f"ai_team_{i}"
+            if len(human_tokens) + sum(1 for t in room["players"] if is_ai_token(t)) >= 8:
+                break
+            if ai_token not in room["players"]:
+                room["players"][ai_token] = {
+                    "token": ai_token, "name": f"AI 球隊 {i}", "joined_at": datetime.now(timezone.utc).isoformat(),
+                    "draft_order": 0, "picks": [], "spent": 0, "is_ai": True
+                }
+        order = list(room.get("players", {}).keys())
         random.SystemRandom().shuffle(order)
         for i, player_token in enumerate(order, start=1):
             room["players"][player_token]["draft_order"] = i
@@ -322,6 +335,222 @@ def active_pick_info(room):
 def money(value):
     return f"${value}"
 
+
+
+def is_ai_token(token):
+    return str(token).startswith("ai_team_")
+
+def player_ratings(player):
+    """遊戲用估算能力值，不是官方統計。"""
+    price = int(player.get("price", 1))
+    legend = "傳奇" in player.get("team", "")
+    base = {1: 66, 2: 73, 3: 80, 4: 87, 5: 94}.get(price, 70)
+    n = sum(ord(c) for c in player["id"])
+    name = player["name"]
+    defense_bonus = 2 if any(k in name for k in ["Duncan", "Olajuwon", "Rodman", "Gobert", "Wembanyama", "Davis", "Garnett"]) else 0
+    shooting_bonus = 3 if any(k in name for k in ["Curry", "Bird", "Allen", "Miller", "Durant", "Thompson"]) else 0
+    playmaking_bonus = 3 if any(k in name for k in ["Magic", "Nash", "Paul", "Kidd", "Doncic", "Jokic", "Haliburton"]) else 0
+    rebounding_bonus = 3 if any(k in name for k in ["O'Neal", "Duncan", "Garnett", "Gobert", "Giannis", "Jokic", "Olajuwon"]) else 0
+    return {
+        "overall": min(99, base + (n % 5) - 2 + (1 if legend else 0)),
+        "offense": min(99, base + ((n // 3) % 7) - 3),
+        "defense": min(99, base + ((n // 7) % 7) - 3 + defense_bonus),
+        "shooting": min(99, base + ((n // 11) % 7) - 3 + shooting_bonus),
+        "playmaking": min(99, base + ((n // 13) % 7) - 3 + playmaking_bonus),
+        "rebounding": min(99, base + ((n // 17) % 7) - 3 + rebounding_bonus),
+    }
+
+def roster_analysis(player_ids):
+    roster = [PLAYER_BY_ID[pid] for pid in player_ids if pid in PLAYER_BY_ID]
+    if not roster:
+        return {"overall": 0, "offense": 0, "defense": 0, "shooting": 0, "playmaking": 0, "rebounding": 0,
+                "strengths": ["尚未完成選秀"], "weaknesses": ["尚無球員可供分析"]}
+    ratings = [player_ratings(p) for p in roster]
+    keys = ["overall", "offense", "defense", "shooting", "playmaking", "rebounding"]
+    avgs = {k: round(sum(r[k] for r in ratings) / len(ratings), 1) for k in keys}
+    strengths, weaknesses = [], []
+    labels = {
+        "offense": ("進攻火力", "進攻火力"),
+        "defense": ("防守強度", "防守強度"),
+        "shooting": ("外線投射", "外線投射"),
+        "playmaking": ("組織傳球", "組織傳球"),
+        "rebounding": ("籃板能力", "籃板能力"),
+    }
+    sorted_skills = sorted(labels, key=lambda k: avgs[k], reverse=True)
+    for k in sorted_skills[:2]:
+        if avgs[k] >= 82:
+            strengths.append(f"{labels[k][0]}佳（{avgs[k]}）")
+    for k in sorted(labels, key=lambda k: avgs[k])[:2]:
+        if avgs[k] < 83:
+            weaknesses.append(f"{labels[k][1]}較弱（{avgs[k]}）")
+    if not strengths:
+        strengths = ["陣容能力平均，具備一定均衡性"]
+    if not weaknesses:
+        weaknesses = ["明顯短板不多，需看對位與比賽波動"]
+    return {**avgs, "strengths": strengths, "weaknesses": weaknesses}
+
+def ai_choose_player(room, ai_token):
+    """AI 在自己的順位挑選可用球員，兼顧能力、價格與剩餘預算。"""
+    team = room["players"][ai_token]
+    roster = [PLAYER_BY_ID[pid] for pid in team.get("picks", []) if pid in PLAYER_BY_ID]
+    spent = int(team.get("spent", 0))
+    remaining_slots = int(room.get("roster_size", ROSTER_SIZE)) - len(roster)
+    remaining_budget = int(room.get("budget", BUDGET)) - spent
+    candidates = [
+        PLAYER_BY_ID[pid] for pid in room.get("available_players", [])
+        if pid in PLAYER_BY_ID and PLAYER_BY_ID[pid]["price"] <= remaining_budget
+        and PLAYER_BY_ID[pid]["price"] <= remaining_budget - max(0, remaining_slots - 1)
+    ]
+    if not candidates:
+        candidates = [PLAYER_BY_ID[pid] for pid in room.get("available_players", [])
+                      if pid in PLAYER_BY_ID and PLAYER_BY_ID[pid]["price"] <= remaining_budget]
+    if not candidates:
+        raise ValueError("AI 找不到符合剩餘預算的球員。")
+    current = roster_analysis([p["id"] for p in roster])
+    def score(p):
+        r = player_ratings(p)
+        # Encourage team balance while prioritizing high overall value per dollar.
+        weakest = min(current.get(k, 75) for k in ["offense", "defense", "shooting", "playmaking", "rebounding"]) if roster else 75
+        return r["overall"] * 1.0 + r["offense"] * 0.12 + r["defense"] * 0.12 + r["shooting"] * 0.12 + r["playmaking"] * 0.12 + r["rebounding"] * 0.12 - p["price"] * 1.5 + random.random() * 4
+    return max(candidates, key=score)
+
+def ai_pick_current(code):
+    """只在當前順位是 AI 時進行一次原子選秀。"""
+    def mutate(room, result):
+        if room.get("status") != "drafting":
+            return room
+        order = room.get("draft_order", [])
+        current = int(room.get("current_pick", 0))
+        if not order or current >= len(order) * int(room.get("roster_size", ROSTER_SIZE)):
+            room["status"] = "finished"
+            return room
+        n = len(order)
+        round_no, offset = divmod(current, n)
+        idx = offset if round_no % 2 == 0 else n - 1 - offset
+        token = order[idx]
+        if not is_ai_token(token):
+            return room
+        player = ai_choose_player(room, token)
+        person = room["players"][token]
+        person.setdefault("picks", []).append(player["id"])
+        person["spent"] = int(person.get("spent", 0)) + int(player["price"])
+        room["available_players"].remove(player["id"])
+        room.setdefault("history", []).append({
+            "pick_no": current + 1, "round": round_no + 1,
+            "player_token": token, "player_name": person["name"],
+            "player_id": player["id"], "nba_player": player["name"],
+            "price": player["price"], "time": datetime.now(timezone.utc).isoformat(),
+            "is_ai": True
+        })
+        room["current_pick"] = current + 1
+        room["version"] = room.get("version", 0) + 1
+        if room["current_pick"] >= len(order) * int(room.get("roster_size", ROSTER_SIZE)):
+            room["status"] = "finished"
+        return room
+    return transact_room(code, mutate)
+
+def simulate_league(room):
+    """每隊互打一次，固定保存結果，避免每次頁面刷新重新抽比分。"""
+    teams = room.get("draft_order", [])
+    results = []
+    wins = {token: 0 for token in teams}
+    losses = {token: 0 for token in teams}
+    for i in range(len(teams)):
+        for j in range(i + 1, len(teams)):
+            a, b = teams[i], teams[j]
+            ra = roster_analysis(room["players"][a].get("picks", []))
+            rb = roster_analysis(room["players"][b].get("picks", []))
+            # Score model combines offense and overall, with bounded random variance.
+            seed = sum(ord(c) for c in (room.get("code", "") + a + b))
+            rng = random.Random(seed)
+            score_a = round(101 + (ra["offense"] - 80) * 0.42 + (ra["overall"] - 80) * 0.25 + rng.gauss(0, 8))
+            score_b = round(101 + (rb["offense"] - 80) * 0.42 + (rb["overall"] - 80) * 0.25 + rng.gauss(0, 8))
+            if score_a == score_b:
+                if rng.random() > 0.5: score_a += 1
+                else: score_b += 1
+            winner, loser = (a, b) if score_a > score_b else (b, a)
+            wins[winner] += 1
+            losses[loser] += 1
+            results.append({
+                "home": a, "away": b, "home_name": room["players"][a]["name"],
+                "away_name": room["players"][b]["name"], "home_score": score_a,
+                "away_score": score_b, "winner": winner
+            })
+    standings = []
+    for token in teams:
+        analysis = roster_analysis(room["players"][token].get("picks", []))
+        standings.append({
+            "token": token, "team": room["players"][token]["name"],
+            "wins": wins[token], "losses": losses[token], "overall": analysis["overall"],
+        })
+    standings.sort(key=lambda x: (x["wins"], x["overall"]), reverse=True)
+    return {"matches": results, "standings": standings, "games": len(results)}
+
+def save_league_results(code):
+    def mutate(room, result):
+        if room.get("status") != "finished":
+            raise ValueError("必須先完成選秀才能進行對戰模擬。")
+        if len(room.get("draft_order", [])) != 8:
+            raise ValueError("聯盟必須有 8 隊才能模擬 28 場比賽。")
+        if not room.get("league_results"):
+            room["league_results"] = simulate_league(room)
+            room["version"] = room.get("version", 0) + 1
+        return room
+    return transact_room(code, mutate)
+
+
+
+def simulate_championship(room):
+    """聯盟 28 場結束後，取戰績前四名進行準決賽與冠軍賽。"""
+    league = room.get("league_results") or simulate_league(room)
+    standings = league.get("standings", [])
+    if len(standings) < 4:
+        raise ValueError("至少需要 4 隊才能進行季後賽。")
+    seeds = [row["token"] for row in standings[:4]]
+    rounds = []
+    rng = random.Random(sum(ord(c) for c in room.get("code", "")) + 2026)
+
+    def play(a, b, round_name):
+        aa = roster_analysis(room["players"][a].get("picks", []))
+        bb = roster_analysis(room["players"][b].get("picks", []))
+        sa = round(98 + (aa["offense"] - 80) * 0.45 + (aa["overall"] - 80) * 0.30 + rng.gauss(0, 6))
+        sb = round(98 + (bb["offense"] - 80) * 0.45 + (bb["overall"] - 80) * 0.30 + rng.gauss(0, 6))
+        if sa == sb:
+            if rng.random() > 0.5: sa += 1
+            else: sb += 1
+        winner = a if sa > sb else b
+        return {
+            "round": round_name, "team_a": a, "team_a_name": room["players"][a]["name"],
+            "score_a": sa, "team_b": b, "team_b_name": room["players"][b]["name"],
+            "score_b": sb, "winner": winner, "winner_name": room["players"][winner]["name"]
+        }
+
+    semi1 = play(seeds[0], seeds[3], "準決賽 1")
+    semi2 = play(seeds[1], seeds[2], "準決賽 2")
+    final = play(semi1["winner"], semi2["winner"], "冠軍賽")
+    return {
+        "format": "例行賽前四名進季後賽，單場淘汰",
+        "semifinals": [semi1, semi2],
+        "final": final,
+        "champion": final["winner"],
+        "champion_name": final["winner_name"],
+        "runner_up": final["team_b"] if final["winner"] == final["team_a"] else final["team_a"],
+        "runner_up_name": final["team_b_name"] if final["winner"] == final["team_a"] else final["team_a_name"]
+    }
+
+def save_championship(code):
+    def mutate(room, result):
+        if room.get("status") != "finished":
+            raise ValueError("必須先完成選秀。")
+        if not room.get("league_results"):
+            raise ValueError("請先完成 28 場聯盟賽。")
+        if not room.get("championship"):
+            room["championship"] = simulate_championship(room)
+            room["version"] = room.get("version", 0) + 1
+        return room
+    return transact_room(code, mutate)
+
+
 # Session identity is per browser session; room state itself lives in Firebase.
 if "player_token" not in st.session_state:
     st.session_state.player_token = uuid.uuid4().hex
@@ -332,8 +561,8 @@ if "room_code" not in st.session_state:
 if "room_error" not in st.session_state:
     st.session_state.room_error = ""
 
-st.title("🏀 NBA 15 元多人蛇行選秀")
-st.caption("每人預算 $15・每人 5 名球員・蛇行順位・即時共用球員池")
+st.title("🏀 NBA 傳奇 × 2026 球星夢幻選秀聯盟")
+st.caption("每隊 $15・每隊 5 名球員・真人不足 8 隊由 AI 補滿・蛇行選秀・28 場聯盟模擬")
 with st.sidebar:
     st.subheader("玩家資料")
     name_input = st.text_input("你的暱稱", value=st.session_state.display_name, max_chars=24)
@@ -426,6 +655,21 @@ if my_token not in room.get("players", {}):
         st.rerun()
     st.stop()
 
+# Automatically execute consecutive AI picks whenever an AI team is on the clock.
+if room.get("status") == "drafting":
+    for _ in range(8):
+        current_info = active_pick_info(room)
+        if not current_info or not is_ai_token(current_info["token"]):
+            break
+        try:
+            ai_pick_current(code)
+            room = get_room(code) or room
+        except Exception as e:
+            st.error(f"AI 選秀發生問題：{e}")
+            break
+
+players = room.get("players", {})
+order = room.get("draft_order", [])
 my_player = room["players"][my_token]
 host = room.get("host_token") == my_token
 
@@ -447,7 +691,7 @@ st.markdown("**邀請方式：** 複製瀏覽器網址傳給朋友；若網址�
 players = room.get("players", {})
 order = room.get("draft_order", [])
 if room["status"] == "lobby":
-    st.info("等待玩家加入。房主確認人數後即可開始；開始後不能再加入新玩家。")
+    st.info("等待真人玩家加入。房主開始後，系統會自動補足至 8 隊；開始後不能再加入新玩家。")
     st.subheader(f"已加入玩家（{len(players)} 人）")
     st.dataframe(
         [{"玩家": p["name"], "身份": "房主" if p["token"] == room.get("host_token") else "玩家"}
@@ -539,6 +783,77 @@ if room["status"] in ("drafting", "finished"):
         st.dataframe(result_rows, use_container_width=True, hide_index=True)
         csv_data = __import__("pandas").DataFrame(result_rows).to_csv(index=False).encode("utf-8-sig")
         st.download_button("⬇️ 下載選秀結果 CSV", data=csv_data, file_name=f"nba_draft_{code}.csv", mime="text/csv")
+
+        st.markdown("## 🧠 AI 球隊戰力分析")
+        analysis_rows = []
+        for token in order:
+            p = players[token]
+            a = roster_analysis(p.get("picks", []))
+            analysis_rows.append({
+                "球隊": p["name"], "綜合": a["overall"], "進攻": a["offense"],
+                "防守": a["defense"], "外線": a["shooting"],
+                "組織": a["playmaking"], "籃板": a["rebounding"],
+                "優勢": "、".join(a["strengths"]), "弱點": "、".join(a["weaknesses"])
+            })
+        st.dataframe(analysis_rows, use_container_width=True, hide_index=True)
+        for token in order:
+            p = players[token]
+            a = roster_analysis(p.get("picks", []))
+            with st.expander(f"{p['name']}｜綜合戰力 {a['overall']}"):
+                st.write("**優勢：** " + "；".join(a["strengths"]))
+                st.write("**弱點：** " + "；".join(a["weaknesses"]))
+                st.caption("能力值由遊戲價格與球員特徵估算，用於娛樂性模擬，並非官方球員數據。")
+
+        if host and not room.get("league_results"):
+            if st.button("🏀 模擬 8 隊互打（共 28 場）", type="primary"):
+                try:
+                    save_league_results(code)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"無法模擬聯盟：{e}")
+
+        league = room.get("league_results")
+        if league:
+            st.markdown("## 🏆 八隊聯盟戰績")
+            st.caption(f"已完成 {league.get('games', 0)} 場模擬比賽；每隊與其他 7 隊各交手一次。比分為遊戲模型模擬，並非真實比賽。")
+            st.dataframe([
+                {"排名": i + 1, "球隊": row["team"], "勝": row["wins"], "敗": row["losses"], "綜合戰力": row["overall"]}
+                for i, row in enumerate(league.get("standings", []))
+            ], use_container_width=True, hide_index=True)
+            with st.expander("📋 查看全部 28 場比分", expanded=True):
+                st.dataframe([
+                    {"主隊": m["home_name"], "主隊得分": m["home_score"],
+                     "客隊": m["away_name"], "客隊得分": m["away_score"],
+                     "勝隊": room["players"][m["winner"]]["name"]}
+                    for m in league.get("matches", [])
+                ], use_container_width=True, hide_index=True)
+
+            st.markdown("## 🏆 季後賽與總冠軍")
+            st.caption("例行賽戰績前四名晉級：第 1 名對第 4 名、第 2 名對第 3 名；準決賽勝者進行單場冠軍賽。")
+            if host and not room.get("championship"):
+                if st.button("👑 進行季後賽並決出總冠軍", type="primary"):
+                    try:
+                        save_championship(code)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"季後賽模擬失敗：{e}")
+
+            championship = room.get("championship")
+            if championship:
+                st.success(f"🏆 本屆總冠軍：{championship['champion_name']}！")
+                st.write(f"亞軍：**{championship['runner_up_name']}**")
+                st.markdown("### 準決賽")
+                st.dataframe([
+                    {"賽事": m["round"], "球隊 A": m["team_a_name"], "比分": m["score_a"],
+                     "球隊 B": m["team_b_name"], "比分 ": m["score_b"], "晉級": m["winner_name"]}
+                    for m in championship["semifinals"]
+                ], use_container_width=True, hide_index=True)
+                final = championship["final"]
+                st.markdown("### 🥇 冠軍賽")
+                st.markdown(f"**{final['team_a_name']} {final['score_a']} : {final['score_b']} {final['team_b_name']}**")
+                st.success(f"冠軍：{championship['champion_name']}")
+                st.caption("季後賽比分為遊戲模型模擬，不是真實 NBA 比賽結果。")
+
     roster_cols = st.columns(min(4, max(1, len(order))))
     for i, token in enumerate(order):
         p = players[token]
